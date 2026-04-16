@@ -1,171 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Antipode Bore | Daily 3D Challenge</title>
-  
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.110/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-  
-  <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #000; }
-    #cesiumContainer { width: 100%; height: 100%; position: absolute; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antipode Bore | Daily 3D Challenge</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.116.0/Build/Cesium/Cesium.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/cesium@1.116.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #000; }
+        #cesiumContainer { width: 100%; height: 100%; position: absolute; }
 
-    #ui-overlay {
-      position: absolute; top: 20px; left: 20px; z-index: 10;
-      background: rgba(0, 0, 0, 0.85); color: white; padding: 20px;
-      border-radius: 12px; border: 1px solid #00d4ff; pointer-events: none;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    }
+        #ui-overlay {
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            background: rgba(0, 0, 0, 0.85); color: white; padding: 20px;
+            border-radius: 12px; border: 1px solid #00d4ff; pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
 
-    #result-card {
-      display: none; position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%); z-index: 100;
-      background: white; padding: 30px; border-radius: 20px;
-      text-align: center; width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-    }
+        #result-card {
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); z-index: 100;
+            background: white; padding: 30px; border-radius: 20px;
+            text-align: center; width: 320px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
 
-    .btn { background: #00d4ff; color: #fff; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; }
-    h1 { color: #00d4ff; margin: 0 0 5px 0; font-size: 22px; letter-spacing: 1px; }
-    #city-name { font-size: 24px; font-weight: bold; color: #fff; margin-bottom: 5px; }
-    .instruction { opacity: 0.7; font-size: 13px; font-style: italic; }
-  </style>
+        .btn { background: #00d4ff; color: #fff; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; }
+        h1 { color: #00d4ff; margin: 0 0 5px 0; font-size: 22px; letter-spacing: 1px; }
+        #city-name { font-size: 24px; font-weight: bold; color: #fff; margin-bottom: 5px; }
+        .instruction { opacity: 0.7; font-size: 13px; font-style: italic; }
+    </style>
 </head>
 <body>
 
-  <div id="ui-overlay">
-    <h1>ANTIPODE BORE</h1>
-    <div id="city-name">Initializing...</div>
-    <div class="instruction">Drop your pin on the exact opposite side of the globe.</div>
-  </div>
+    <div id="ui-overlay">
+        <h1>ANTIPODE BORE</h1>
+        <div id="city-name">Initializing Globe...</div>
+        <div class="instruction">Drop your pin on the exact opposite side of the globe.</div>
+    </div>
 
-  <div id="result-card">
-    <h2 id="msg" style="margin-top:0;">Result</h2>
-    <p id="dist" style="font-size: 20px; font-weight: bold; color: #333; margin: 10px 0;"></p>
-    <p id="context-msg" style="font-size: 14px; color: #666;"></p>
-    <button class="btn" onclick="location.reload()">PLAY AGAIN</button>
-  </div>
+    <div id="result-card">
+        <h2 id="msg" style="margin-top:0; color: #333;">Result</h2>
+        <p id="dist" style="font-size: 24px; font-weight: bold; color: #00d4ff; margin: 10px 0;"></p>
+        <p id="context-msg" style="font-size: 14px; color: #666;"></p>
+        <button class="btn" onclick="location.reload()">PLAY AGAIN</button>
+    </div>
 
-  <div id="cesiumContainer"></div>
+    <div id="cesiumContainer"></div>
 
-  <script>
-    // 1. ACCESS KEY & VIEWER SETUP
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTZmY2I4ZS0yYTlhLTQxODctYjZkZS1jOTA1ZmIxNDdiYjUiLCJpZCI6NDE5MzAwLCJpYXQiOjE3NzYzNzcyNTZ9.5O-hwuJtckLG6vECcevIOMRTDRnmyKPau4obEjV47go';
+    <script>
+        // 1. CONFIGURATION
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTZmY2I4ZS0yYTlhLTQxODctYjZkZS1jOTA1ZmIxNDdiYjUiLCJpZCI6NDE5MzAwLCJpYXQiOjE3NzYzNzcyNTZ9.5O-hwuJtckLG6vECcevIOMRTDRnmyKPau4obEjV47go';
 
-    const viewer = new Cesium.Viewer('cesiumContainer', {
-      terrainProvider: Cesium.createWorldTerrain(),
-      baseLayerPicker: false, geocoder: false, homeButton: false,
-      navigationHelpButton: false, sceneModePicker: false, timeline: false, animation: false,
-      infoBox: false, selectionIndicator: false
-    });
+        const cities = [
+            { name: "Sarasota, USA", lat: 27.3364, lon: -82.5307 },
+            { name: "Madrid, Spain", lat: 40.4168, lon: -3.7038 },
+            { name: "Tokyo, Japan", lat: 35.6762, lon: 139.6503 },
+            { name: "Bogotá, Colombia", lat: 4.7110, lon: -74.0721 },
+            { name: "Cape Town, South Africa", lat: -33.9249, lon: 18.4241 },
+            { name: "Jakarta, Indonesia", lat: -6.2088, lon: 106.8456 },
+            { name: "Reykjavík, Iceland", lat: 64.1466, lon: -21.9426 },
+            { name: "Auckland, New Zealand", lat: -36.8485, lon: 174.7633 },
+            { name: "Buenos Aires, Argentina", lat: -34.6037, lon: -58.3816 },
+            { name: "Hong Kong, China", lat: 22.3193, lon: 114.1694 },
+            { name: "London, UK", lat: 51.5074, lon: -0.1278 },
+            { name: "Quito, Ecuador", lat: -0.1807, lon: -78.4678 },
+            { name: "Perth, Australia", lat: -31.9505, lon: 115.8605 },
+            { name: "Mumbai, India", lat: 19.0760, lon: 72.8777 },
+            { name: "Cairo, Egypt", lat: 30.0444, lon: 31.2357 },
+            { name: "Moscow, Russia", lat: 55.7558, lon: 37.6173 },
+            { name: "Honolulu, USA", lat: 21.3069, lon: -157.8583 },
+            { name: "Lima, Peru", lat: -12.0464, lon: -77.0428 },
+            { name: "Casablanca, Morocco", lat: 33.5731, lon: -7.5898 },
+            { name: "Bangkok, Thailand", lat: 13.7563, lon: 100.5018 },
+            { name: "Rio de Janeiro, Brazil", lat: -22.9068, lon: -43.1729 },
+            { name: "Istanbul, Turkey", lat: 41.0082, lon: 28.9784 },
+            { name: "Anchorage, USA", lat: 61.2181, lon: -149.9003 },
+            { name: "Lagos, Nigeria", lat: 6.5244, lon: 3.3792 },
+            { name: "Seoul, South Korea", lat: 37.5665, lon: 126.9780 },
+            { name: "Oslo, Norway", lat: 59.9139, lon: 10.7522 },
+            { name: "Nairobi, Kenya", lat: -1.2921, lon: 36.8219 },
+            { name: "Taipei, Taiwan", lat: 25.0330, lon: 121.5654 },
+            { name: "Dubai, UAE", lat: 25.2048, lon: 55.2708 },
+            { name: "Ushuaia, Argentina", lat: -54.8019, lon: -68.3030 }
+        ];
 
-    // 2. THE 30-DAY CITY DATABASE
-    const cities = [
-        { name: "Sarasota, USA", lat: 27.3364, lon: -82.5307 },
-        { name: "Madrid, Spain", lat: 40.4168, lon: -3.7038 },
-        { name: "Tokyo, Japan", lat: 35.6762, lon: 139.6503 },
-        { name: "Bogotá, Colombia", lat: 4.7110, lon: -74.0721 },
-        { name: "Cape Town, South Africa", lat: -33.9249, lon: 18.4241 },
-        { name: "Jakarta, Indonesia", lat: -6.2088, lon: 106.8456 },
-        { name: "Reykjavík, Iceland", lat: 64.1466, lon: -21.9426 },
-        { name: "Auckland, New Zealand", lat: -36.8485, lon: 174.7633 },
-        { name: "Buenos Aires, Argentina", lat: -34.6037, lon: -58.3816 },
-        { name: "Hong Kong, China", lat: 22.3193, lon: 114.1694 },
-        { name: "London, UK", lat: 51.5074, lon: -0.1278 },
-        { name: "Quito, Ecuador", lat: -0.1807, lon: -78.4678 },
-        { name: "Perth, Australia", lat: -31.9505, lon: 115.8605 },
-        { name: "Mumbai, India", lat: 19.0760, lon: 72.8777 },
-        { name: "Cairo, Egypt", lat: 30.0444, lon: 31.2357 },
-        { name: "Moscow, Russia", lat: 55.7558, lon: 37.6173 },
-        { name: "Honolulu, USA", lat: 21.3069, lon: -157.8583 },
-        { name: "Lima, Peru", lat: -12.0464, lon: -77.0428 },
-        { name: "Casablanca, Morocco", lat: 33.5731, lon: -7.5898 },
-        { name: "Bangkok, Thailand", lat: 13.7563, lon: 100.5018 },
-        { name: "Rio de Janeiro, Brazil", lat: -22.9068, lon: -43.1729 },
-        { name: "Istanbul, Turkey", lat: 41.0082, lon: 28.9784 },
-        { name: "Anchorage, USA", lat: 61.2181, lon: -149.9003 },
-        { name: "Lagos, Nigeria", lat: 6.5244, lon: 3.3792 },
-        { name: "Seoul, South Korea", lat: 37.5665, lon: 126.9780 },
-        { name: "Oslo, Norway", lat: 59.9139, lon: 10.7522 },
-        { name: "Nairobi, Kenya", lat: -1.2921, lon: 36.8219 },
-        { name: "Taipei, Taiwan", lat: 25.0330, lon: 121.5654 },
-        { name: "Dubai, UAE", lat: 25.2048, lon: 55.2708 },
-        { name: "Ushuaia, Argentina", lat: -54.8019, lon: -68.3030 }
-    ];
+        // 2. INITIALIZATION
+        window.onload = function() {
+            try {
+                const viewer = new Cesium.Viewer('cesiumContainer', {
+                    terrainProvider: Cesium.createWorldTerrain(),
+                    baseLayerPicker: false, 
+                    geocoder: false, 
+                    homeButton: false,
+                    navigationHelpButton: false, 
+                    sceneModePicker: false, 
+                    timeline: false, 
+                    animation: false,
+                    infoBox: false, 
+                    selectionIndicator: false
+                });
 
-    // Get today's unique city
-    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-    const daily = cities[dayOfYear % cities.length];
-    document.getElementById('city-name').innerText = daily.name;
+                const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+                const daily = cities[dayOfYear % cities.length];
+                document.getElementById('city-name').innerText = daily.name;
 
-    // Antipode Logic
-    const tLat = -daily.lat;
-    const tLon = daily.lon > 0 ? daily.lon - 180 : daily.lon + 180;
+                const tLat = -daily.lat;
+                const tLon = daily.lon > 0 ? daily.lon - 180 : daily.lon + 180;
 
-    // 3. GLOBE VISUALS
-    viewer.scene.globe.translucency.enabled = true;
-    viewer.scene.globe.translucency.frontFaceAlpha = 0.45;
+                viewer.scene.globe.translucency.enabled = true;
+                viewer.scene.globe.translucency.frontFaceAlpha = 0.45;
 
-    // Start City Marker
-    viewer.entities.add({
-      position: Cesium.Cartesian3.fromDegrees(daily.lon, daily.lat),
-      point: { pixelSize: 14, color: Cesium.Color.CYAN, outlineColor: Cesium.Color.WHITE, outlineWidth: 2 }
-    });
+                // Start Marker
+                viewer.entities.add({
+                    position: Cesium.Cartesian3.fromDegrees(daily.lon, daily.lat),
+                    point: { pixelSize: 14, color: Cesium.Color.CYAN, outlineColor: Cesium.Color.WHITE, outlineWidth: 2 }
+                });
 
-    // Glowing Earth Core
-    viewer.entities.add({
-      position: Cesium.Cartesian3.ZERO,
-      ellipsoid: { radii: new Cesium.Cartesian3(700000.0, 700000.0, 700000.0), material: Cesium.Color.ORANGERED.withAlpha(0.7) }
-    });
+                // Core
+                viewer.entities.add({
+                    position: Cesium.Cartesian3.ZERO,
+                    ellipsoid: { radii: new Cesium.Cartesian3(700000.0, 700000.0, 700000.0), material: Cesium.Color.ORANGERED.withAlpha(0.7) }
+                });
 
-    // 4. INTERACTION
-    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    handler.setInputAction(function(click) {
-      const cartesian = viewer.camera.pickEllipsoid(click.position);
-      if (cartesian) {
-        const carto = Cesium.Cartographic.fromCartesian(cartesian);
-        processBore(Cesium.Math.toDegrees(carto.latitude), Cesium.Math.toDegrees(carto.longitude));
-      }
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+                handler.setInputAction(function(click) {
+                    const cartesian = viewer.camera.pickEllipsoid(click.position);
+                    if (cartesian) {
+                        const carto = Cesium.Cartographic.fromCartesian(cartesian);
+                        const uLat = Cesium.Math.toDegrees(carto.latitude);
+                        const uLon = Cesium.Math.toDegrees(carto.longitude);
+                        
+                        // Execute Bore Hole
+                        handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                        
+                        viewer.entities.add({
+                            polyline: {
+                                positions: [Cesium.Cartesian3.fromDegrees(daily.lon, daily.lat), Cesium.Cartesian3.ZERO, Cesium.Cartesian3.fromDegrees(tLon, tLat)],
+                                width: 6, material: new Cesium.PolylineGlowMaterialProperty({ color: Cesium.Color.MAGENTA, glowPower: 0.25 })
+                            }
+                        });
 
-    function processBore(uLat, uLon) {
-      handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                        viewer.entities.add({
+                            position: Cesium.Cartesian3.fromDegrees(tLon, tLat),
+                            point: { pixelSize: 22, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 3 }
+                        });
 
-      // Draw the Laser Bore
-      viewer.entities.add({
-        polyline: {
-          positions: [Cesium.Cartesian3.fromDegrees(daily.lon, daily.lat), Cesium.Cartesian3.ZERO, Cesium.Cartesian3.fromDegrees(tLon, tLat)],
-          width: 6, material: new Cesium.PolylineGlowMaterialProperty({ color: Cesium.Color.MAGENTA, glowPower: 0.25 })
-        }
-      });
+                        const dist = Math.round(turf.distance(turf.point([uLon, uLat]), turf.point([tLon, tLat]), {units: 'kilometers'}));
+                        viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(tLon, tLat, 6000000), duration: 2.5 });
 
-      // Show Exit Hole
-      viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(tLon, tLat),
-        point: { pixelSize: 22, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 3 }
-      });
+                        setTimeout(() => {
+                            document.getElementById('result-card').style.display = 'block';
+                            document.getElementById('dist').innerText = `${dist} km`;
+                            
+                            let msg = "Way off!";
+                            let sub = "The world is bigger than it looks.";
+                            if(dist < 600) { msg = "Incredible!"; sub = "Pinpoint accuracy."; }
+                            else if(dist < 1500) { msg = "So Close!"; sub = "You really know your globes."; }
+                            
+                            document.getElementById('msg').innerText = msg;
+                            document.getElementById('context-msg').innerText = sub;
+                        }, 3000);
+                    }
+                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-      // Distance Math
-      const dist = Math.round(turf.distance(turf.point([uLon, uLat]), turf.point([tLon, tLat]), {units: 'kilometers'}));
-
-      // Camera Reveal
-      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(tLon, tLat, 5500000), duration: 2.5 });
-
-      setTimeout(() => {
-        document.getElementById('result-card').style.display = 'block';
-        document.getElementById('dist').innerText = `${dist} km away`;
-        
-        let msg = "Way off!";
-        let sub = "The globe is a confusing place.";
-        if(dist < 500) { msg = "Incredible!"; sub = "Perfect tunnel geometry."; }
-        else if(dist < 1500) { msg = "So Close!"; sub = "You have a great mental map."; }
-        
-        document.getElementById('msg').innerText = msg;
-        document.getElementById('context-msg').innerText = sub;
-      }, 3000);
-    }
-  </script>
+            } catch (err) {
+                console.error(err);
+                document.getElementById('city-name').innerText = "Load Failed. Check Ion Key.";
+            }
+        };
+    </script>
 </body>
 </html>
