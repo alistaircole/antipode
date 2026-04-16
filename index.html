@@ -5,41 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Antipode Bore</title>
     
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.116.0/Build/Cesium/Cesium.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/cesium@1.116.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
         #cesiumContainer { width: 100%; height: 100%; }
-        #overlay { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.8); color: #00d4ff; padding: 15px; border-radius: 8px; border: 1px solid #00d4ff; pointer-events: none; }
-        #result-card { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; background: white; padding: 30px; border-radius: 20px; text-align: center; width: 300px; }
-        .btn { background: #00d4ff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
+        #ui { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.8); color: #00d4ff; padding: 15px; border-radius: 8px; border: 1px solid #00d4ff; pointer-events: none; }
+        #result-card { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; background: white; padding: 30px; border-radius: 20px; text-align: center; width: 280px; }
+        .btn { background: #00d4ff; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
+    <div id="ui">
         <h2 style="margin:0">ANTIPODE BORE</h2>
-        <div id="city-label" style="color:white; font-size: 20px; font-weight: bold; margin-top: 5px;">Locating...</div>
+        <div id="city-label" style="color:white; font-size: 18px; margin-top: 5px;">Starting...</div>
     </div>
 
     <div id="result-card">
         <h2 style="color:#333; margin:0">Bore Results</h2>
         <div id="dist-text" style="font-size: 24px; color: #00d4ff; margin: 15px 0;"></div>
-        <button class="btn" onclick="location.reload()">TRY AGAIN</button>
+        <button class="btn" onclick="location.reload()">PLAY AGAIN</button>
     </div>
 
     <div id="cesiumContainer"></div>
 
     <script>
+        // Your antipode token
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwYTZmY2I4ZS0yYTlhLTQxODctYjZkZS1jOTA1ZmIxNDdiYjUiLCJpZCI6NDE5MzAwLCJpYXQiOjE3NzYzNzcyNTZ9.5O-hwuJtckLG6vECcevIOMRTDRnmyKPau4obEjV47go';
 
         const cities = [
             { name: "Sarasota, USA", lat: 27.3364, lon: -82.5307 },
-            { name: "Madrid, Spain", lat: 40.4168, lon: -3.7038 },
-            { name: "Tokyo, Japan", lat: 35.6762, lon: 139.6503 },
             { name: "London, UK", lat: 51.5074, lon: -0.1278 },
+            { name: "Tokyo, Japan", lat: 35.6762, lon: 139.6503 },
             { name: "Sydney, Australia", lat: -33.8688, lon: 151.2093 }
         ];
 
@@ -51,19 +51,18 @@
                 timeline: false, animation: false, infoBox: false, selectionIndicator: false
             });
 
+            // Logic to pick city
             const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
             const daily = cities[dayOfYear % cities.length];
-            document.getElementById('city-label').innerText = daily.name;
+            document.getElementById('city-label').innerText = "From: " + daily.name;
 
+            // Target Antipode
             const tLat = -daily.lat;
             const tLon = daily.lon > 0 ? daily.lon - 180 : daily.lon + 180;
 
-            viewer.scene.globe.translucency.enabled = true;
-            viewer.scene.globe.translucency.frontFaceAlpha = 0.5;
-
             viewer.entities.add({
                 position: Cesium.Cartesian3.fromDegrees(daily.lon, daily.lat),
-                point: { pixelSize: 12, color: Cesium.Color.CYAN }
+                point: { pixelSize: 10, color: Cesium.Color.CYAN }
             });
 
             const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
@@ -77,7 +76,7 @@
                     
                     viewer.entities.add({
                         position: Cesium.Cartesian3.fromDegrees(tLon, tLat),
-                        point: { pixelSize: 20, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 2 }
+                        point: { pixelSize: 15, color: Cesium.Color.RED }
                     });
 
                     const dist = Math.round(turf.distance(turf.point([uLon, uLat]), turf.point([tLon, tLat]), {units: 'kilometers'}));
@@ -91,7 +90,7 @@
             }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
         } catch (e) {
-            document.getElementById('city-label').innerText = "Load Failed. Try Incognito Mode.";
+            document.getElementById('city-label').innerText = "Critical Load Error.";
         }
     </script>
 </body>
