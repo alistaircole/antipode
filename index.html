@@ -3,30 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Antipode Bore | Daily 3D Challenge</title>
+    <title>Antipode Bore | Random Test Mode</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.116.0/Widgets/widgets.min.css" rel="stylesheet">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
         #cesiumContainer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        
         #ui { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.85); color: #00d4ff; padding: 15px; border-radius: 12px; border: 1px solid #00d4ff; pointer-events: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        
+        /* Action Button */
+        #action-ui { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; text-align: center; width: 100%; pointer-events: none; }
+        .bore-btn { background: #ff00ff; color: white; border: none; padding: 15px 40px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 18px; pointer-events: auto; box-shadow: 0 0 20px rgba(255,0,255,0.6); display: none; }
+        
         #result-card { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; background: white; padding: 30px; border-radius: 20px; text-align: center; width: 300px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
         .btn { background: #00d4ff; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 15px; pointer-events: auto; }
-        h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
-        #status { color: white; font-size: 24px; font-weight: bold; margin-top: 5px; }
+        
+        h1 { margin: 0; font-size: 18px; letter-spacing: 1px; }
+        #status { color: white; font-size: 22px; font-weight: bold; margin-top: 5px; }
+        .hint { color: #aaa; font-size: 12px; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div id="ui">
         <h1>ANTIPODE BORE</h1>
-        <div id="status">Loading Earth...</div>
-        <div style="color: #aaa; font-size: 12px; margin-top: 5px;">Find the exact opposite side of the world.</div>
+        <div id="status">Targeting...</div>
+        <div class="hint">Zoom and rotate to the opposite side.</div>
+    </div>
+
+    <div id="action-ui">
+        <button id="bore-trigger" class="bore-btn">DRILL HOLE HERE</button>
     </div>
 
     <div id="result-card">
         <h2 id="msg" style="color:#333; margin:0">Bore Complete</h2>
         <div id="dist-text" style="font-size: 32px; font-weight: bold; color: #00d4ff; margin: 15px 0;"></div>
         <p id="sub-msg" style="color: #666; font-size: 14px;"></p>
-        <button class="btn" onclick="location.reload()">PLAY AGAIN</button>
+        <button class="btn" onclick="location.reload()">NEW RANDOM CITY</button>
     </div>
 
     <div id="cesiumContainer"></div>
@@ -45,29 +57,14 @@
             { name: "Bogotá, Colombia", lat: 4.7110, lon: -74.0721 },
             { name: "Cape Town, South Africa", lat: -33.9249, lon: 18.4241 },
             { name: "Jakarta, Indonesia", lat: -6.2088, lon: 106.8456 },
-            { name: "Reykjavík, Iceland", lat: 64.1466, lon: -21.9426 },
             { name: "Auckland, New Zealand", lat: -36.8485, lon: 174.7633 },
             { name: "Buenos Aires, Argentina", lat: -34.6037, lon: -58.3816 },
-            { name: "Hong Kong, China", lat: 22.3193, lon: 114.1694 },
-            { name: "Quito, Ecuador", lat: -0.1807, lon: -78.4678 },
             { name: "Perth, Australia", lat: -31.9505, lon: 115.8605 },
-            { name: "Mumbai, India", lat: 19.0760, lon: 72.8777 },
             { name: "Cairo, Egypt", lat: 30.0444, lon: 31.2357 },
-            { name: "Moscow, Russia", lat: 55.7558, lon: 37.6173 },
             { name: "Honolulu, USA", lat: 21.3069, lon: -157.8583 },
-            { name: "Lima, Peru", lat: -12.0464, lon: -77.0428 },
-            { name: "Casablanca, Morocco", lat: 33.5731, lon: -7.5898 },
             { name: "Bangkok, Thailand", lat: 13.7563, lon: 100.5018 },
             { name: "Rio de Janeiro, Brazil", lat: -22.9068, lon: -43.1729 },
-            { name: "Istanbul, Turkey", lat: 41.0082, lon: 28.9784 },
-            { name: "Anchorage, USA", lat: 61.2181, lon: -149.9003 },
-            { name: "Lagos, Nigeria", lat: 6.5244, lon: 3.3792 },
-            { name: "Seoul, South Korea", lat: 37.5665, lon: 126.9780 },
-            { name: "Oslo, Norway", lat: 59.9139, lon: 10.7522 },
-            { name: "Nairobi, Kenya", lat: -1.2921, lon: 36.8219 },
-            { name: "Taipei, Taiwan", lat: 25.0330, lon: 121.5654 },
-            { name: "Dubai, UAE", lat: 25.2048, lon: 55.2708 },
-            { name: "Ushuaia, Argentina", lat: -54.8019, lon: -68.3030 }
+            { name: "Rome, Italy", lat: 41.9028, lon: 12.4964 }
         ];
         
         window.onload = function() {
@@ -78,50 +75,73 @@
                     timeline: false, animation: false, infoBox: false, selectionIndicator: false
                 });
 
-                // Pick city based on day of the year
-                const now = new Date();
-                const start = new Date(now.getFullYear(), 0, 0);
-                const diff = now - start;
-                const day = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const daily = cities[day % cities.length];
-                
+                const daily = cities[Math.floor(Math.random() * cities.length)];
                 document.getElementById('status').innerText = daily.name;
 
                 const tLat = -daily.lat;
                 const tLon = daily.lon > 0 ? daily.lon - 180 : daily.lon + 180;
 
-                // Mark Start
+                viewer.scene.globe.translucency.enabled = true;
+                viewer.scene.globe.translucency.frontFaceAlpha = 0.5;
+
+                // Start Marker
+                const startPos = Cesium.Cartesian3.fromDegrees(daily.lon, daily.lat);
                 viewer.entities.add({
-                    position: Cesium.Cartesian3.fromDegrees(daily.lon, daily.lat),
-                    point: { pixelSize: 14, color: Cesium.Color.CYAN, outlineColor: Cesium.Color.WHITE, outlineWidth: 2 }
+                    position: startPos,
+                    point: { pixelSize: 15, color: Cesium.Color.CYAN, outlineColor: Cesium.Color.WHITE, outlineWidth: 2 }
                 });
 
-                const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-                handler.setInputAction(function(click) {
-                    const cartesian = viewer.camera.pickEllipsoid(click.position);
+                // Glowing Core
+                viewer.entities.add({
+                    position: Cesium.Cartesian3.ZERO,
+                    ellipsoid: { radii: new Cesium.Cartesian3(600000, 600000, 600000), material: Cesium.Color.ORANGERED.withAlpha(0.8) }
+                });
+
+                // Initial Zoom
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(daily.lon, daily.lat, 8000000),
+                    duration: 2
+                });
+
+                // Show the Drill Button after initial flyTo
+                setTimeout(() => { document.getElementById('bore-trigger').style.display = 'inline-block'; }, 2000);
+
+                document.getElementById('bore-trigger').onclick = function() {
+                    // Capture what the user is looking at in the center of the screen
+                    const windowPosition = new Cesium.Cartesian2(viewer.container.clientWidth / 2, viewer.container.clientHeight / 2);
+                    const cartesian = viewer.camera.pickEllipsoid(windowPosition);
+
                     if (cartesian) {
+                        this.style.display = 'none';
                         const carto = Cesium.Cartographic.fromCartesian(cartesian);
                         const uLat = Cesium.Math.toDegrees(carto.latitude);
                         const uLon = Cesium.Math.toDegrees(carto.longitude);
                         
-                        // Show true target
+                        // Magenta Bore Line
+                        viewer.entities.add({
+                            polyline: {
+                                positions: [startPos, Cesium.Cartesian3.ZERO, Cesium.Cartesian3.fromDegrees(tLon, tLat)],
+                                width: 8,
+                                material: new Cesium.PolylineGlowMaterialProperty({ color: Cesium.Color.MAGENTA, glowPower: 0.2 })
+                            }
+                        });
+
+                        // True Target Marker
                         viewer.entities.add({
                             position: Cesium.Cartesian3.fromDegrees(tLon, tLat),
                             point: { pixelSize: 22, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 3 }
                         });
 
                         const dist = Math.round(turf.distance(turf.point([uLon, uLat]), turf.point([tLon, tLat]), {units: 'kilometers'}));
-                        viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(tLon, tLat, 6000000), duration: 2.5 });
+                        viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(tLon, tLat, 5000000), duration: 2.5 });
 
                         setTimeout(() => {
                             document.getElementById('result-card').style.display = 'block';
                             document.getElementById('dist-text').innerText = dist.toLocaleString() + " km";
-                            document.getElementById('msg').innerText = dist < 1000 ? "Great Shot!" : "Missed!";
                             document.getElementById('sub-msg').innerText = "The true antipode is marked in red.";
                         }, 3000);
-                        handler.destroy();
                     }
-                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                };
 
             } catch (e) {
                 console.error(e);
